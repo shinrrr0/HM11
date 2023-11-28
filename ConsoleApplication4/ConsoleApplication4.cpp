@@ -2,29 +2,36 @@
 #include <vector>
 #include <string>
 
-// Базовый класс для плодов
+// Абстрактный класс для плодов
 class Harvest {
 public:
     Harvest(const std::string& name, int weight, const std::string& color)
         : name(name), weight(weight), color(color) {}
 
-    std::string get_info() const {
-        return name + ": " + std::to_string(weight) + " г, цвет: " + color;
-    }
+    virtual ~Harvest() = default;
 
-private:
+    virtual std::string get_info() const = 0; // Чисто виртуальная функция
+
+protected:
     std::string name;
     int weight;
     std::string color;
 };
 
-// Базовый класс для растений
+// Абстрактный класс для растений
 class Plant {
 public:
     Plant(const std::string& size, const std::string& color, int max_fruits)
         : size(size), color(color), max_fruits(max_fruits) {}
 
-    virtual Harvest* create_fruit(const std::string& name, int weight, const std::string& color) = 0;
+    virtual ~Plant() {
+        // Освобождаем память от плодов при уничтожении объекта растения
+        for (const auto& fruit : current_fruits) {
+            delete fruit;
+        }
+    }
+
+    virtual Harvest* create_fruit(const std::string& name, int weight, const std::string& color) = 0; // Чисто виртуальная функция
 
     void harvest_fruits() {
         if (current_fruits.empty()) {
@@ -37,9 +44,11 @@ public:
             current_fruits.clear();
         }
     }
+
     void add_to_current_fruits(Harvest* fruit) {
         current_fruits.push_back(fruit);
     }
+
     const std::vector<Harvest*>& get_current_fruits() {
         return current_fruits;
     }
@@ -56,6 +65,10 @@ class Apple : public Harvest {
 public:
     Apple(const std::string& name, int weight, const std::string& color)
         : Harvest(name, weight, color) {}
+
+    std::string get_info() const override {
+        return name + ": " + std::to_string(weight) + " г, цвет: " + color;
+    }
 };
 
 // Конкретный класс для растения - яблоня
@@ -70,6 +83,7 @@ public:
 
 int main() {
     setlocale(LC_ALL, "Russian");
+
     // Создаем яблоню
     AppleTree apple_tree;
 
@@ -83,11 +97,6 @@ int main() {
 
     // Собираем плоды
     apple_tree.harvest_fruits();
-
-    // Освобождаем память от плодов
-    for (const auto& fruit : apple_tree.get_current_fruits()) {
-        delete fruit;
-    }
 
     return 0;
 }
